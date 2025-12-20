@@ -18,7 +18,12 @@ import json
 
 # Short demo game:
 demo_init = [["2", "3", "8"], 
-                ["8", "A", "J"]
+             ["8", "A", "J"]
+             ]
+
+# Longer demo game:
+demo_long_init = [["3", "9", "8", "J", "6", "4", "9", "2", "5", "Q", "K", "A", "3", "Q", "K", "3", "6", "7", "7", "4", "8", "A", "Q", "K", "A", "5", "8"], 
+                ["A", "J", "5", "7", "J", "8", "10", "4", "9", "3", "5", "2", "Joker", "Q", "9", "K", "10", "7", "4", "2", "10", "Joker", "6", "J", "6", "2", "10"]
                 ]
 
 # Shortest game:
@@ -32,7 +37,7 @@ initial_hands = demo_init # change here to another preset or define manually
 NUM_PLAYERS = 2 # values other than 2 not yet supported!
 LOG_FOLDER = Path("game_logs")
 LOG_FOLDER.mkdir(parents=True, exist_ok=True)
-LOG_FILE = Path("game_logs/log.csv")
+LOG_FILE = Path("game_logs/log_demo.csv")
 
 MAX_TURNS = 10000
 

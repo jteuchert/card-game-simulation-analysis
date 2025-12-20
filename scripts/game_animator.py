@@ -26,7 +26,7 @@ LABEL_X = -6.7
 LABEL_Y_OFFSET = 1.25
 row_labels = ["Desk:", "Player A:", "Player B:"]
 
-LOG_FILE = Path("game_logs/log_shortest.csv")
+LOG_FILE = Path("game_logs/log_demo.csv")
 
 
 # Read states from log file
