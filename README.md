@@ -29,12 +29,14 @@ The questions:
 Install needed Python packages:<br/>
 `pip install -r requirements.txt`
 
-Now you can simply run `game_logger.py` or `game_simulation_parallelized` as instructed in their comments.
+Now you can simply run `game_logger.py` or `game_simulation_parallelized.py` as instructed in their comments.
 
 The script `game_animator.py` can be used to animate games with the package Manim. On Linux I created a new environment to install Manim and a specific version of Python, separated from my main system. If you want to run this script make sure to install Manim in your prefered way first.<br/>
 In `game_animator.py`, configure as instructed in the comments there. Then you can create animations (mp4):<br/>
-Quick low quality: `manim -pql game_animator.py CardGame<br/>
-Slower high quality: `manim -pqh game_animator.py CardGame<br/>
+Quick low quality:<br/>
+`manim -pql game_animator.py CardGame`<br/>
+Slower high quality:<br/>
+`manim -pqh game_animator.py CardGame`<br/>
 
 ## Key Results
 These are the key results of the analysis (detailed explanations can be found further down):<br/>
@@ -46,7 +48,7 @@ These are the key results of the analysis (detailed explanations can be found fu
 ## Future Improvements
 - Improve simulation speed
 - Implement SQLite for data management
-- Enable more customization (more players etc.)
+- Increase user-friendliness
 - Try machine learning methods to look for patterns that predict the winner or game duration
 - Possibly develop graphical app for simulation, visualization and analysis
 

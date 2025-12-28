@@ -1,7 +1,7 @@
 """ Script to simulate games in big numbers
 Usage:
     - Configure setup below (NUM_BATCHES: How many batches of 1 million games each should be simulated
-                             NUM_PLAYERS: number of players (don't change, more players are not yet fully supported)
+                             NUM_PLAYERS: number of players
                              END_RESULTS_FILE: file name for results, don't change)
                              MAX_TURNS: determines when the simulation ends in case it would run too long)
     - Optional: adjust number of used cores for parallel processing (l. 293)
@@ -21,9 +21,9 @@ import json
 # Config
 # ---------------------------------------------------
 
-NUM_BATCHES = 10
+NUM_BATCHES = 1
 NUM_PLAYERS = 2
-END_RESULTS_FILE = Path("end_result.csv")
+END_RESULTS_FILE = Path(f"end_result_{NUM_PLAYERS}p.csv")
 MAX_TURNS = 9999
 
 # ---------------------------------------------------
@@ -38,15 +38,16 @@ FULL_DECK = 4 * BASE_DECK + ["Joker", "Joker"]
 # ---------------------------------------------------
 def prepare_summary_file():
     if not summary_file.exists():
-        cols = ["id", "turns", "winner", "hand_0", "hand_1"]
-        if NUM_PLAYERS == 3:
-            cols.append("hand_2")
+        cols = ["id", "turns", "winner"]
+        for p in range(NUM_PLAYERS):
+            cols.append(f"hand_{p}")
         pd.DataFrame(columns=cols).to_csv(summary_file, index=False)
         
         
 def prepare_results_file():
     if not END_RESULTS_FILE.exists():
-        cols = ["batch", "shortest", "longest", "player 0 win rate", "bins", "counts"]
+        win_cols = [f"player_{p}_win_rate" for p in range(NUM_PLAYERS)]
+        cols = ["batch", "shortest", "longest", "bins", "counts"] + win_cols
         pd.DataFrame(columns=cols).to_csv(END_RESULTS_FILE, index=False)
 
 
@@ -61,8 +62,8 @@ def simulate_game(game_id, start_hands):
     player = 0
 
     while turn < MAX_TURNS:
-        # skip 3p empty player
-        if NUM_PLAYERS == 3 and not hands[player]:
+        # skip empty player
+        if NUM_PLAYERS >= 3 and not hands[player]:
             player = (player + 1) % NUM_PLAYERS
             continue
 
@@ -105,11 +106,10 @@ def append_summary(summaries):
             "id": s["id"],
             "turns": s["turns"],
             "winner": s["winner"],
-            "hand_0": ", ".join(s["initial_hands"][0]),
-            "hand_1": ", ".join(s["initial_hands"][1]),
         }
-        if NUM_PLAYERS == 3:
-            row["hand_2"] = ", ".join(s["initial_hands"][2])
+        for p in range(NUM_PLAYERS):
+            key = f"hand_{p}"
+            row[key] = json.dumps(s["initial_hands"][p]) #", ".join(s["initial_hands"][p])
         df_rows.append(row)
 
     pd.DataFrame(df_rows).to_csv(summary_file, mode="a", header=False, index=False)
@@ -118,15 +118,17 @@ def append_summary(summaries):
 # ---------------------------------------------------
 # Results writing
 # ---------------------------------------------------
-def append_result(batch, shortest, longest, win_rate_p0, bins, counts):
+def append_result(batch, shortest, longest, win_rates, bins, counts):
     row = {
         "batch": batch,
         "shortest": shortest,
         "longest": longest,
-        "player 0 win rate": win_rate_p0,
         "bins": json.dumps(bins.tolist()),
         "counts": json.dumps(counts.tolist()),
     }
+    for p in range(NUM_PLAYERS):
+        key = f"player_{p}_win_rate"
+        row[key] = win_rates[p]
     df = pd.DataFrame([row])
     df.to_csv(END_RESULTS_FILE, mode="a", header=False, index=False)
 
@@ -160,7 +162,7 @@ def run_parallel_simulations(n_games, max_workers=None):
 # ---------------------------------------------------
 # Plotting functions
 # ---------------------------------------------------
-def turn_count_plot(batch, win_rate_p0):
+def turn_count_plot(batch, win_rates):
     """ Plot the distribution of turn counts for all games of a batch. """
     df = pd.read_csv(summary_file)
 
@@ -176,7 +178,7 @@ def turn_count_plot(batch, win_rate_p0):
     # Plot histogram
     plt.figure(figsize=(8, 5), dpi=300)
     counts, bins, _ = plt.hist(turn_counts, bins=[100*w for w in range(100)], edgecolor="black", alpha=0.7, label=f"Min: {min_turns}, Max: {max_turns}")
-    plt.title(f"Distribution of Game Lengths Batch {batch}")
+    plt.title(f"Distribution of Game Lengths Batch {batch} ({NUM_PLAYERS} players)")
     plt.xlabel("Number of Turns")
     plt.ylabel("Number of Games")
     plt.grid(True, linestyle="--", alpha=0.5)
@@ -198,10 +200,10 @@ def turn_count_plot(batch, win_rate_p0):
     plt.yscale("log")
     
     plt.tight_layout()
-    plt.savefig(f"turn_count_batch_{batch}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"turn_count_batch_{batch}_{NUM_PLAYERS}p.png", dpi=300, bbox_inches="tight")
     plt.show()
     
-    append_result(batch, min_turns, max_turns, win_rate_p0, bins, counts)
+    append_result(batch, min_turns, max_turns, win_rates, bins, counts)
 
 
 def analyse_batch(batch):
@@ -229,7 +231,7 @@ def analyse_batch(batch):
 
     # Plot: Turn count distribution
     print("\nPlotting turn count distribution...")
-    turn_count_plot(batch, win_rates.get(0, 0))
+    turn_count_plot(batch, [win_rates.get(p, 0) for p in range(NUM_PLAYERS)])
 
 # ---------------------------------------------------
 # Analysis functions
@@ -239,7 +241,6 @@ def analyze_batches():
     num_saved_batches = len(end_results.index)
     globally_shortest = end_results["shortest"].min()
     globally_longest = end_results["longest"].max()
-    global_win_rate_p0 = end_results["player 0 win rate"].mean()
 
     end_results["bins"] = end_results["bins"].apply(json.loads)
     end_results["counts"] = end_results["counts"].apply(json.loads)
@@ -251,8 +252,10 @@ def analyze_batches():
     global_counts = np.sum(counts_array, axis=0)
 
     print("\n=== Final Win Rates ===")
-    print(f"Player 0: {global_win_rate_p0:.2%}")
-    print(f"Player 1: {1 - global_win_rate_p0:.2%}")
+    for p in range(NUM_PLAYERS):
+        global_win_rate_p = end_results[f"player_{p}_win_rate"].mean()
+        print(f"Player {p}: {global_win_rate_p:.2%}")
+
     
     # Final plot
     # Calculate bin centers
@@ -262,7 +265,7 @@ def analyze_batches():
     plt.bar(bin_centers, global_counts, width=np.diff(global_bins), edgecolor="black", alpha=0.7, label=f"Min: {globally_shortest}, Max: {globally_longest}")
     plt.xlabel("Number of Turns")
     plt.ylabel("Number of Games")
-    plt.title("Distribution of Game Lengths")
+    plt.title(f"Distribution of Game Lengths ({NUM_PLAYERS} players)")
     plt.grid(True, linestyle="--", alpha=0.5)
     plt.plot([], [], ' ', label=f"{num_saved_batches} million games")
     plt.legend()
@@ -273,7 +276,7 @@ def analyze_batches():
     plt.yscale("log")
     
     plt.tight_layout()
-    plt.savefig("turn_count_final.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"turn_count_final_{NUM_PLAYERS}p.png", dpi=300, bbox_inches="tight")
     plt.show()
     
 
@@ -286,13 +289,13 @@ if __name__ == "__main__":
     df = pd.read_csv(END_RESULTS_FILE)
     num_existing_batches = len(df.index)
     print(f"Number of existing batches: {num_existing_batches}")
-    summary_file = Path(f"summary_batch_{num_existing_batches}.csv")
+    summary_file = Path(f"summary_batch_{num_existing_batches}_{NUM_PLAYERS}p.csv")
     
     max_workers = os.cpu_count() - 1 # Use all cores but leave 1 free
     for b in range(NUM_BATCHES):
         batch = b + num_existing_batches
         print(f"Starting batch id {batch}...")
-        summary_file = Path(f"summary_batch_{batch}.csv")
+        summary_file = Path(f"summary_batch_{batch}_{NUM_PLAYERS}p.csv")
         for p in range(10):
             run_parallel_simulations(100000, max_workers=max_workers)
             print(f"{(p+1)*100000} simulations of batch {batch} done.")

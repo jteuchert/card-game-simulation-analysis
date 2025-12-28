@@ -1,6 +1,8 @@
 """ 
 Script for automatic rendering of game animations using manim.
 
+Only working for two players!
+
 Usage:
     - Make sure the folder "cards" (found in "data"), containing the card images, is in the same folder as this script. 
     - Create log file with game_logger.py

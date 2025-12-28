@@ -1,6 +1,6 @@
 """ Script for generating log files given the initial hands.
 Usage:
-    - Define initial hands for players A and B below (values 2-10, J, Q, K, A max 4 each, max 2 Jokers)
+    - Define initial hands (values 2-10, J, Q, K, A max 4 each, max 2 Jokers) or read from summary file
     - Define output file name LOG_FILE below
     - Run script
 """
@@ -32,12 +32,23 @@ shortest_init = [["2", "4", "6", "8", "10", "Q", "A", "2", "5", "7", "9", "J", "
                 ]
 
 
-initial_hands = demo_init # change here to another preset or define manually
+def read_hands(file_name, game_idx):
+    df = pd.read_csv(file_name)
+    init = []
+    for col in df.filter(like="hand_").columns:
+        df[col] = df[col].apply(json.loads)
+        init.append(df.iloc[game_idx][col])
+    return init
 
-NUM_PLAYERS = 2 # values other than 2 not yet supported!
+"""" Set initial hands here! """
+#initial_hands = demo_init # change here to another preset or define manually
+initial_hands = read_hands("summary_batch_0_2p.csv", 0)
+
+
+NUM_PLAYERS = len(initial_hands)
 LOG_FOLDER = Path("game_logs")
 LOG_FOLDER.mkdir(parents=True, exist_ok=True)
-LOG_FILE = Path("game_logs/log_demo.csv")
+LOG_FILE = Path("game_logs/log_demo.csv") # output log file name
 
 MAX_TURNS = 10000
 
@@ -94,13 +105,27 @@ def assign_random_suits(values, suits=("H", "D", "C", "S")):
 # Core simulation
 # ---------------------------------------------------
 def simulate_game():
-    hand_1_size = len(initial_hands[0])
-    input_list = initial_hands[0].copy() + initial_hands[1].copy()
-    suited_list = assign_random_suits(input_list)
-    hand_A = suited_list[:hand_1_size]
-    hand_B = suited_list[hand_1_size:]
+    #hand_1_size = len(initial_hands[0])
+    #input_list = initial_hands[0].copy() + initial_hands[1].copy()
+    #suited_list = assign_random_suits(input_list)
+    #hand_A = suited_list[:hand_1_size]
+    #hand_B = suited_list[hand_1_size:]
     
-    hands = [hand_A, hand_B]
+    #hands = [hand_A, hand_B]
+    
+    #### Updated suiting block: Combines hands to a list, applies suiting and separates into hands again
+    input_list = []
+    hands = []
+    hand_sizes = []
+    for p in range(NUM_PLAYERS):
+        hand_sizes.append(len(initial_hands[p]))
+        input_list += initial_hands[p].copy() 
+    suited_list = assign_random_suits(input_list)
+    progressor = 0
+    for p in range(NUM_PLAYERS):
+        hands.append(suited_list[progressor:progressor + hand_sizes[p]])
+        progressor += hand_sizes[p]  
+    ####
     
     desk = []
     turn = 0
@@ -108,12 +133,13 @@ def simulate_game():
     
     # Create log file
     if not LOG_FILE.exists():
-        cols = ["turn", "player_turn", "desk", "hand_0", "hand_1"]
+        hand_cols = [f"hand_{p}" for p in range(NUM_PLAYERS)]
+        cols = ["turn", "player_turn", "desk"] + hand_cols
         pd.DataFrame(columns=cols).to_csv(LOG_FILE, index=False)
 
     while turn < MAX_TURNS:
-        # skip 3p empty player
-        if NUM_PLAYERS == 3 and not hands[player]:
+        # skip empty player
+        if NUM_PLAYERS >= 3 and not hands[player]:
             player = (player + 1) % NUM_PLAYERS
             continue
 
@@ -122,10 +148,11 @@ def simulate_game():
         row = {
             "turn": turn,
             "player_turn": player,
-            "desk": json.dumps(desk), #.tolist()
-            "hand_0": json.dumps(hands[0]),
-            "hand_1": json.dumps(hands[1])
+            "desk": json.dumps(desk) #.tolist()
         }
+        for p in range(NUM_PLAYERS):
+            key = f"hand_{p}"
+            row[key] = json.dumps(hands[p])
         df = pd.DataFrame([row])
         df.to_csv(LOG_FILE, mode="a", header=False, index=False)
 
@@ -145,6 +172,8 @@ def simulate_game():
         #        desk_values = desk_values[0]
         #    else:
         #        desk_values = "Joker"
+        
+        # Get card values (4C --> 4, Joker1 --> Joker etc.)
         for i in range(len(desk_values)):
             if desk_values[i] == "Joker1" or desk_values[i] == "Joker2":
                 desk_values[i] = "Joker"
@@ -158,9 +187,10 @@ def simulate_game():
                 "turn": turn,
                 "player_turn": player,
                 "desk": json.dumps(desk), #.tolist()
-                "hand_0": json.dumps(hands[0]),
-                "hand_1": json.dumps(hands[1])
             }
+            for p in range(NUM_PLAYERS):
+                key = f"hand_{p}"
+                row[key] = json.dumps(hands[p])
             df = pd.DataFrame([row])
             df.to_csv(LOG_FILE, mode="a", header=False, index=False)
             
@@ -171,8 +201,7 @@ def simulate_game():
             del desk[idx:]
             hands[player].extend(gain)
             
-            
-            
+                 
         else:
             player = (player + 1) % NUM_PLAYERS
 
