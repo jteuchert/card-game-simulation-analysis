@@ -12,10 +12,7 @@ from collections import Counter
 import json
 
 
-# ---------------------------------------------------
-# Config
-# ---------------------------------------------------
-
+""" Config """
 # Short demo game:
 demo_init = [["2", "3", "8"], 
              ["8", "A", "J"]
@@ -41,21 +38,20 @@ def read_hands(file_name, game_idx):
     return init
 
 """" Set initial hands here! """
-#initial_hands = demo_init # change here to another preset or define manually
-initial_hands = read_hands("summary_batch_0_2p.csv", 0)
+# change here to another preset, define manually or read from summary file
+initial_hands = demo_init
+#initial_hands = read_hands("summary_batch_0_2p.csv", 0)
 
 
 NUM_PLAYERS = len(initial_hands)
 LOG_FOLDER = Path("game_logs")
 LOG_FOLDER.mkdir(parents=True, exist_ok=True)
-LOG_FILE = Path("game_logs/log_demo.csv") # output log file name
+LOG_FILE = Path("game_logs/log_demo_4p.csv") # output log file name
 
 MAX_TURNS = 10000
 
 
-# ---------------------------------------------------
-# Suits
-# ---------------------------------------------------
+""" Suits """
 def assign_random_suits(values, suits=("H", "D", "C", "S")):
     # Count how many of each value are requested
     counts = Counter(values)
@@ -101,17 +97,8 @@ def assign_random_suits(values, suits=("H", "D", "C", "S")):
     return result
 
 
-# ---------------------------------------------------
-# Core simulation
-# ---------------------------------------------------
+""" Core simulation """
 def simulate_game():
-    #hand_1_size = len(initial_hands[0])
-    #input_list = initial_hands[0].copy() + initial_hands[1].copy()
-    #suited_list = assign_random_suits(input_list)
-    #hand_A = suited_list[:hand_1_size]
-    #hand_B = suited_list[hand_1_size:]
-    
-    #hands = [hand_A, hand_B]
     
     #### Updated suiting block: Combines hands to a list, applies suiting and separates into hands again
     input_list = []
@@ -167,11 +154,6 @@ def simulate_game():
 
         # check match
         desk_values = desk.copy()
-        #for v in desk_values:
-        #    if not ((v == "Joker1") or (v == "Joker2")):
-        #        desk_values = desk_values[0]
-        #    else:
-        #        desk_values = "Joker"
         
         # Get card values (4C --> 4, Joker1 --> Joker etc.)
         for i in range(len(desk_values)):

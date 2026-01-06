@@ -17,10 +17,7 @@ import os
 import matplotlib.pyplot as plt
 import json
 
-# ---------------------------------------------------
-# Config
-# ---------------------------------------------------
-
+""" Config """
 NUM_BATCHES = 1
 NUM_PLAYERS = 2
 END_RESULTS_FILE = Path(f"end_result_{NUM_PLAYERS}p.csv")
@@ -33,9 +30,7 @@ BASE_DECK = [str(i) for i in range(2, 11)] + ["A", "J", "Q", "K"]
 FULL_DECK = 4 * BASE_DECK + ["Joker", "Joker"]
 
 
-# ---------------------------------------------------
-# Setup summary and results file if missing
-# ---------------------------------------------------
+""" Setup summary and results file if missing """
 def prepare_summary_file():
     if not summary_file.exists():
         cols = ["id", "turns", "winner"]
@@ -51,9 +46,7 @@ def prepare_results_file():
         pd.DataFrame(columns=cols).to_csv(END_RESULTS_FILE, index=False)
 
 
-# ---------------------------------------------------
-# Game simulation
-# ---------------------------------------------------
+""" Game simulation """
 def simulate_game(game_id, start_hands):
     """ Simulate one game, return summary """
     hands = [h.copy() for h in start_hands]
@@ -96,9 +89,7 @@ def simulate_game(game_id, start_hands):
     return summary
 
 
-# ---------------------------------------------------
-# Summary writing
-# ---------------------------------------------------
+""" Summary writing """
 def append_summary(summaries):
     df_rows = []
     for s in summaries:
@@ -115,9 +106,7 @@ def append_summary(summaries):
     pd.DataFrame(df_rows).to_csv(summary_file, mode="a", header=False, index=False)
 
 
-# ---------------------------------------------------
-# Results writing
-# ---------------------------------------------------
+""" Results writing """
 def append_result(batch, shortest, longest, win_rates, bins, counts):
     row = {
         "batch": batch,
@@ -133,9 +122,7 @@ def append_result(batch, shortest, longest, win_rates, bins, counts):
     df.to_csv(END_RESULTS_FILE, mode="a", header=False, index=False)
 
 
-# ---------------------------------------------------
-# Parallel execution
-# ---------------------------------------------------
+""" Parallel execution """
 def run_parallel_simulations(n_games, max_workers=None):
     prepare_summary_file()
     summary_df = pd.read_csv(summary_file)
@@ -159,9 +146,7 @@ def run_parallel_simulations(n_games, max_workers=None):
     # write summary
     append_summary(results)
 
-# ---------------------------------------------------
-# Plotting functions
-# ---------------------------------------------------
+""" Plotting functions """
 def turn_count_plot(batch, win_rates):
     """ Plot the distribution of turn counts for all games of a batch. """
     df = pd.read_csv(summary_file)
@@ -233,9 +218,7 @@ def analyse_batch(batch):
     print("\nPlotting turn count distribution...")
     turn_count_plot(batch, [win_rates.get(p, 0) for p in range(NUM_PLAYERS)])
 
-# ---------------------------------------------------
-# Analysis functions
-# ---------------------------------------------------
+""" Analysis functions """
 def analyze_batches():
     end_results = pd.read_csv(END_RESULTS_FILE)
     num_saved_batches = len(end_results.index)
@@ -280,9 +263,7 @@ def analyze_batches():
     plt.show()
     
 
-# ---------------------------------------------------
-# Execution
-# ---------------------------------------------------
+""" Execution """
 if __name__ == "__main__":
     print("Initializing...")
     prepare_results_file()
