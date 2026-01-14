@@ -12,7 +12,7 @@ from collections import Counter
 import json
 
 
-""" Config """
+# Config
 # Short demo game:
 demo_init = [["2", "3", "8"], 
              ["8", "A", "J"]
@@ -37,7 +37,10 @@ def read_hands(file_name, game_idx):
         init.append(df.iloc[game_idx][col])
     return init
 
-"""" Set initial hands here! """
+###############################
+### Set initial hands here! ###
+###############################
+
 # change here to another preset, define manually or read from summary file
 initial_hands = demo_init
 #initial_hands = read_hands("summary_batch_0_2p.csv", 0)
@@ -51,8 +54,9 @@ LOG_FILE = Path("game_logs/log_demo_4p.csv") # output log file name
 MAX_TURNS = 10000
 
 
-""" Suits """
+
 def assign_random_suits(values, suits=("H", "D", "C", "S")):
+    """ Assign suits randomly to card values """
     # Count how many of each value are requested
     counts = Counter(values)
 
@@ -97,8 +101,9 @@ def assign_random_suits(values, suits=("H", "D", "C", "S")):
     return result
 
 
-""" Core simulation """
+
 def simulate_game():
+    """ Core simulation """
     
     #### Updated suiting block: Combines hands to a list, applies suiting and separates into hands again
     input_list = []
@@ -131,11 +136,10 @@ def simulate_game():
             continue
 
         # log
-        #print(desk)
         row = {
             "turn": turn,
             "player_turn": player,
-            "desk": json.dumps(desk) #.tolist()
+            "desk": json.dumps(desk)
         }
         for p in range(NUM_PLAYERS):
             key = f"hand_{p}"
@@ -183,7 +187,6 @@ def simulate_game():
             del desk[idx:]
             hands[player].extend(gain)
             
-                 
         else:
             player = (player + 1) % NUM_PLAYERS
 

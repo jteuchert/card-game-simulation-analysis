@@ -25,13 +25,14 @@ MAX_TURNS = 9999
 
 # ---------------------------------------------------
 
-# Prepare deck
+# Prepare deck of cards
 BASE_DECK = [str(i) for i in range(2, 11)] + ["A", "J", "Q", "K"]
 FULL_DECK = 4 * BASE_DECK + ["Joker", "Joker"]
 
 
-""" Setup summary and results file if missing """
+# Setup summary and results file if missing
 def prepare_summary_file():
+    """ Prepare summary file (storing individual game results) """
     if not summary_file.exists():
         cols = ["id", "turns", "winner"]
         for p in range(NUM_PLAYERS):
@@ -40,13 +41,13 @@ def prepare_summary_file():
         
         
 def prepare_results_file():
+    """ Prepare results file (storing batch statistics and histogram bins) """
     if not END_RESULTS_FILE.exists():
         win_cols = [f"player_{p}_win_rate" for p in range(NUM_PLAYERS)]
         cols = ["batch", "shortest", "longest", "bins", "counts"] + win_cols
         pd.DataFrame(columns=cols).to_csv(END_RESULTS_FILE, index=False)
 
 
-""" Game simulation """
 def simulate_game(game_id, start_hands):
     """ Simulate one game, return summary """
     hands = [h.copy() for h in start_hands]
@@ -89,14 +90,15 @@ def simulate_game(game_id, start_hands):
     return summary
 
 
-""" Summary writing """
+
 def append_summary(summaries):
+    """ Summary writing """
     df_rows = []
     for s in summaries:
         row = {
             "id": s["id"],
             "turns": s["turns"],
-            "winner": s["winner"],
+            "winner": s["winner"]
         }
         for p in range(NUM_PLAYERS):
             key = f"hand_{p}"
@@ -106,8 +108,9 @@ def append_summary(summaries):
     pd.DataFrame(df_rows).to_csv(summary_file, mode="a", header=False, index=False)
 
 
-""" Results writing """
+
 def append_result(batch, shortest, longest, win_rates, bins, counts):
+    """ Results writing """
     row = {
         "batch": batch,
         "shortest": shortest,
@@ -122,8 +125,9 @@ def append_result(batch, shortest, longest, win_rates, bins, counts):
     df.to_csv(END_RESULTS_FILE, mode="a", header=False, index=False)
 
 
-""" Parallel execution """
+
 def run_parallel_simulations(n_games, max_workers=None):
+    """ Parallel execution """
     prepare_summary_file()
     summary_df = pd.read_csv(summary_file)
     start_index = len(summary_df)
@@ -146,7 +150,7 @@ def run_parallel_simulations(n_games, max_workers=None):
     # write summary
     append_summary(results)
 
-""" Plotting functions """
+
 def turn_count_plot(batch, win_rates):
     """ Plot the distribution of turn counts for all games of a batch. """
     df = pd.read_csv(summary_file)
@@ -192,6 +196,7 @@ def turn_count_plot(batch, win_rates):
 
 
 def analyse_batch(batch):
+    """ Analyse single batch (winner index, turn statistics and plotting) """
     df = pd.read_csv(summary_file)
 
     # Win rates
@@ -218,8 +223,9 @@ def analyse_batch(batch):
     print("\nPlotting turn count distribution...")
     turn_count_plot(batch, [win_rates.get(p, 0) for p in range(NUM_PLAYERS)])
 
-""" Analysis functions """
+
 def analyze_batches():
+    """ Analyse multiple batches """
     end_results = pd.read_csv(END_RESULTS_FILE)
     num_saved_batches = len(end_results.index)
     globally_shortest = end_results["shortest"].min()
@@ -263,8 +269,9 @@ def analyze_batches():
     plt.show()
     
 
-""" Execution """
+
 if __name__ == "__main__":
+    """ Execution """
     print("Initializing...")
     prepare_results_file()
     df = pd.read_csv(END_RESULTS_FILE)

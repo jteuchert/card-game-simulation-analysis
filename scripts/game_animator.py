@@ -39,13 +39,14 @@ row_labels = ["Desk:"] + [f"Player {i}:" for i in range(NUM_PLAYERS)]
 
 # Card class
 class Card(ImageMobject):
+    """ Card class """
     def __init__(self, name):
         super().__init__(f"cards/{name}.png")
         self.name = name
         self.scale(CARD_SCALE)
 
 
-""" Vertical card rows layout """
+# Vertical card rows layout
 num_rows = NUM_PLAYERS + 1
 
 # Measure card height
@@ -91,9 +92,9 @@ def matching_indices(card_names):
     return [idxs for idxs in groups.values() if len(idxs) >= 2]
 
 
-""" Desk/hands list reading """
-# Get game state at given turn from log
+# Desk/hands list reading
 def get_state(turn):      
+    """ Get game state at given turn from log """
     desk = log.iloc[turn]["desk"]
     curr_player = log.iloc[turn]["player_turn"]
     hands_list = []
@@ -105,8 +106,8 @@ def get_state(turn):
 
 
 
-""" Main loop class """
 class CardGame(Scene):
+    """ Main loop class """
     def construct(self):
         states = [get_state(turn) for turn in range(len(log.index))] # a state looks like this: [[desk, hands], player_turn]
 
@@ -145,8 +146,9 @@ class CardGame(Scene):
             self.transition(a[0], b[0]) # index 0 to select card lists, not player_turn
             self.wait(0.5)
 
-    """ Initialization """
+    
     def init_state(self, state):
+        """ Initialization """
         for r, row in enumerate(state[0]): # index 0 to select card lists, not player_turn
             for card_name in row:
                 card = Card(card_name)
@@ -155,8 +157,9 @@ class CardGame(Scene):
 
         self.layout(animate=False)
 
-    """" Layout """
+    
     def layout(self, animate=True):
+        """" Layout """
         anims = []
         for r, row in enumerate(self.rows):
             for i, card in enumerate(row):
@@ -170,9 +173,9 @@ class CardGame(Scene):
             self.play(*anims, run_time=0.5) #0.6
             
            
-    """ Matching cards highlight """
-    # Short highlight animation of matching cards
+
     def highlight_cards(self, cards, color=YELLOW):
+        """ Short highlight animation of matching cards """
         highlights = [
             SurroundingRectangle(card, color=color, buff=0.05)
             for card in cards
@@ -181,8 +184,9 @@ class CardGame(Scene):
         self.play(*[Create(h) for h in highlights], run_time=0.4)
         self.play(*[FadeOut(h) for h in highlights], run_time=0.4)
 
-    """ State transition """
+    
     def transition(self, prev, nxt):
+        """ State transition """
         prev_pos = self.positions(prev)
         next_pos = self.positions(nxt)
 
@@ -210,8 +214,9 @@ class CardGame(Scene):
             cards_to_highlight = [self.rows[0][i] for i in idxs] # 0 = index of desk row
             self.highlight_cards(cards_to_highlight)
 
-    """ Helper """
+    
     def positions(self, state):
+        """ Get position """
         return {
             card: (r, i)
             for r, row in enumerate(state)
