@@ -14,8 +14,8 @@ The questions:
 5. If all games end within a finite amount of turns, what is the longest possible game?
 
 ## Project Structure
-- `results_data/`: generated data
-- `results_plots/`: generated plots
+- `results_data/`: generated data (please add folder manually)
+- `results_plots/`: generated plots (please add folder manually)
 - `additional_scripts/`: logger and animator scripts and data <br/>
 All other scripts should stay in the main folder modularized_version_2026.
 
@@ -60,6 +60,7 @@ A deck of 54 cards (including 2 jokers) is shuffled and distributed as evenly as
 Players play one card per turn from the top of their pile (moving clockwise). The played card gets added face up onto the row of previously played cards (in playing order). All cards are visible at all times. If the value (suit is irrelevant) of a played card matches that of a card in the row, the player who played that (last) card takes both these cards and all cards between them. Keeping their order, they are added to the bottom of that players hand. It is now that players turn again. A joker can only match with the other joker (jokers are regarded to have their own value). When a player played their last card and cannot gain any cards, that player is out of the game. The game continues until only one player is left with cards on their hand. That player wins the game.<br/>
 
 Simple demo game gif with only a few cards (loading may take a minute):<br/>
+
 ![Demo](videos/short_demo.gif)
 
 The following analysis is done for games with exactly **two players**.
@@ -79,10 +80,11 @@ Now, this number is smaller than the previous one, but still beyond any number o
 
 ### Q2: What does the distribution of number of turns for games look like?
 For a given initial shuffled deck it seems impossible to efficiently estimate the resulting game length or the winner. Especially for long games it can go back and forth, which player seems to be winning (see the following figures showing the number of cards on the desk and in each players hand throughout a short and a long game).<br/>
+
 ![turn plot short](figures/evolution_example_short.png)
 ![turn plot long](figures/evolution_example_long.png)
 
-Therefore it seems not unreasonable to firstly try it with brute force: We can simulate billions of games and count the number of turns until a win for each one. Then, we plot a distribution graph to get a visual impression of how many games last how long. For this I wrote a simulation script (described in a later section) and ran a few billion simulations.
+Therefore it seems not unreasonable to firstly try it with brute force: We can simulate billions of games and count the number of turns until a win for each one. Then, we plot a distribution graph to get a visual impression of how many games last how long. For this I wrote a simulation script (described in a later section) and ran a few billion simulations.<br/>
 
 ![turn plot final](figures/2p_9_numeric_values_jokers_turn_count_plot.png)
 
@@ -99,7 +101,8 @@ This result provides us with interesting insights to the length of games, but it
 One could estimate the maximum number of turns by applying the following assumption:<br/>
 When assuming that the distribution remains linear in a log-plot, the maximal turn count can be estimated by scaling up the found results to the total number of possible games (shift up the distribution until it covers $\sim 2.1 \times 10^{43}$ simulated games and then get the x value for y = 1). **This predicts a game with 44,860 (about 45 thousand) turns to be the longest**. However, this result should **NOT** be convincing evidence to you, since there is no apparent reason to assume that the distribution stays linear (in log scale), going to higher turn counts. It could look very different or even have some hard cutoff due to the properties of the game.
 
-For smaller decks of cards in many cases endless games have been found by simulation (see below), however it is not justified to say this is proof of endless games existing with a standard deck. The shown plot shows the result of 100 million simulated games with a very small deck. The data points at 19999 turns are from endless games, the simulation code stops when reaching that number of turns.
+For smaller decks of cards in many cases endless games have been found by simulation (see below), however it is not justified to say this is proof of endless games existing with a standard deck. The shown plot shows the result of 100 million simulated games with a very small deck. The data points at 19999 turns are from endless games, the simulation code stops when reaching that number of turns.<br/>
+
 ![turn plot endless esample](figures/2p_1_numeric_values_jokers_turn_count_plot.png)
 
 
