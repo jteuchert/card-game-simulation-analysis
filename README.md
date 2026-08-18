@@ -16,7 +16,7 @@ The questions:
 ## Project Structure
 - `results_data/`: generated data
 - `results_plots/`: generated plots
-- `additional_scripts/`: logger and animator scripts and data
+- `additional_scripts/`: logger and animator scripts and data <br/>
 All other scripts should stay in the main folder modularized_version_2026.
 
 ## Tools
