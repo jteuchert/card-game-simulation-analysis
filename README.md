@@ -14,22 +14,22 @@ The questions:
 5. If all games end within a finite amount of turns, what is the longest possible game?
 
 ## Project Structure
-- `scripts/`: core simulation and analysis code
-- `data/`: generated data
-- `figures/`: plots and visualizations
-- `videos/`: animated videos of example games
+- `results_data/`: generated data
+- `results_plots/`: generated plots
+- `additional_scripts/`: logger and animator scripts and data
+All other scripts should stay in the main folder modularized_version_2026.
 
 ## Tools
 - Python
 - NumPy, Pandas
 - Matplotlib
 - Manim (optional for animations)
+- A few other packages
 
 ## How to Run
-Install needed Python packages:<br/>
-`pip install -r requirements.txt`
+If not yet installed, install needed Python packages.
 
-Now you can simply run `game_logger.py` or `game_simulation_parallelized.py` as instructed in their comments.
+Now you can configure the simulation in `config.py` and run `main.py` for simulations or `game_logger.py` for logging a specific game.
 
 The script `game_animator.py` can be used to animate games with the package Manim. On Linux I created a new environment to install Manim and a specific version of Python, separated from my main system. If you want to run this script make sure to install Manim in your prefered way first.<br/>
 In `game_animator.py`, configure as instructed in the comments there. Then you can create animations (mp4):<br/>
@@ -40,10 +40,10 @@ Slower high quality:<br/>
 
 ## Key Results
 These are the key results of the analysis (detailed explanations can be found further down):<br/>
-1. The distribution of game lengths follows a straight line in a log-plot. Longer games get less and less frequent. Games appear to last between 56 and possibly >9000 turns.
+1. The distribution of game lengths follows a straight line in a log-plot (exponential behaviour). Longer games get less and less frequent. Games appear to last between 56 and possibly > 10,000 turns.
 2. The game is very fair, but not perfectly. The starting player consistently has a slightly lower winning chance (49.4%) than the second player.
 3. The shortest possible game is demonstrated to last 56 turns.
-4. Endlessly looping games seem unlikely, although a mathematical proof was not found. However, there can be loops if the jokers are excluded. 
+4. Endlessly looping games have not been found for two players and a standard deck of cards, but they seem possible. However, they would be very rare if they exist. For smaller decks of cards endless games were found, but no mathematical proof was found, that this is also possible for a standard deck and two players.
 
 ## Future Improvements
 - Improve simulation speed
@@ -82,22 +82,25 @@ For a given initial shuffled deck it seems impossible to efficiently estimate th
 ![turn plot short](figures/evolution_example_short.png)
 ![turn plot long](figures/evolution_example_long.png)
 
-Therefore it seems not unreasonable to firstly try it with brute force: We can simulate hundreds of millions of games and count the number of turns until a win for each one. Then, we plot a distribution graph to get a visual impression of how many games last how long. For this I wrote a simulation script (described in a later section) and ran 450 million simulations.
+Therefore it seems not unreasonable to firstly try it with brute force: We can simulate billions of games and count the number of turns until a win for each one. Then, we plot a distribution graph to get a visual impression of how many games last how long. For this I wrote a simulation script (described in a later section) and ran a few billion simulations.
 
-![turn plot final](figures/turn_count_final.png)
+![turn plot final](figures/2p_9_numeric_values_jokers_turn_count_plot.png)
 
-The y-axis (turn count) is set to logarithmic scale to make the plot more readable. In this representation, the distribution of games takes the shape a surprisingly straight line. Being a logarithmic plot, this means that the distribution can be estimated well by a power law (by eye):<br/>
-$y \approx 1.36 \times 10^8 \times \exp{(-0.0022x)}$<br/>
+The y-axis (turn count) is set to logarithmic scale to make the plot more readable. In this representation, the distribution of games takes the shape a surprisingly straight line. Being a logarithmic plot, this means that the distribution can be estimated well by an exponential:<br/>
+$y \approx A \times \exp{(-0.0022x)}$<br/>
 where y is the turn count and x the number of turns.
 
 To answer the question, we can interpret the plot:<br/>
 By far most games end after less than 1000 turns. Longer games get increasingly more rare with increasing turn count. This is a purely empirical observation with no theoretical model behind it to explain the origin of this distribution.
 
-450 million simulated games might seem like a big number, but comparing this to the total number of possible games $\sim 2.1 \times 10^{43}$ we only covered about $2.1 \times 10^{-35}$% of them (basically nothing). One can also argue that for each game we apply a new independent random shuffle to the deck, so it is possible that some permutations are included multiple times. However, this is extremely unlikely ($5 \times 10^{-25}$% likelihood), given the astronomically big number of possible permutations.
+3 billion simulated games might seem like a big number, but comparing this to the total number of possible games $\sim 2.1 \times 10^{43}$ we only covered about $1.4 \times 10^{-32}$% of them (basically nothing). One can also argue that for each game we apply a new independent random shuffle to the deck, so it is possible that some permutations are included multiple times. However, this is extremely unlikely given the astronomically big number of possible permutations.
 
 This result provides us with interesting insights to the length of games, but it cannot definitively answer the following questions about the longest and shortest possible games, nor can it prove that all games end in a finite amount of turns. It can indeed tell us, that if endless games exist, they are extremely rare.<br/>
 One could estimate the maximum number of turns by applying the following assumption:<br/>
 When assuming that the distribution remains linear in a log-plot, the maximal turn count can be estimated by scaling up the found results to the total number of possible games (shift up the distribution until it covers $\sim 2.1 \times 10^{43}$ simulated games and then get the x value for y = 1). **This predicts a game with 44,860 (about 45 thousand) turns to be the longest**. However, this result should **NOT** be convincing evidence to you, since there is no apparent reason to assume that the distribution stays linear (in log scale), going to higher turn counts. It could look very different or even have some hard cutoff due to the properties of the game.
+
+For smaller decks of cards in many cases endless games have been found by simulation (see below), however it is not justified to say this is proof of endless games existing with a standard deck. The shown plot shows the result of 100 million simulated games with a very small deck. The data points at 19999 turns are from endless games, the simulation code stops when reaching that number of turns.
+![turn plot endless esample](figures/2p_1_numeric_values_jokers_turn_count_plot.png)
 
 
 ### Q3: How short is the shortest possible game?
@@ -177,53 +180,67 @@ FULL_DECK = 4 * BASE_DECK + ["Joker", "Joker"]
 ```
 The items of this list are then shuffled and distributed into `# of players` new lists, one for each players hand.
 ```python
-deck = FULL_DECK.copy()
-random.shuffle(deck)
-hands = [[] for _ in range(NUM_PLAYERS)]
-for j, card in enumerate(deck):
-    hands[j % NUM_PLAYERS].append(card)
+import random
+
+def generate_hands(full_deck, num_players):
+    """ Generate and return random hands for num_players """
+    deck = full_deck.copy()
+    random.shuffle(deck)
+    hands = [[] for _ in range(num_players)]
+    for j, card in enumerate(deck):
+        hands[j % num_players].append(card)
+    return hands
 ```
-This is a shortened version the main game loop:
+This is the main simulation loop function:
 ```python
-desk = []
-turn = 0
-player = 0
+from collections import deque
 
-while turn < MAX_TURNS:
-    # win?
-    if sum(1 for h in hands if len(h) == 0) > NUM_PLAYERS - 2:
-        break
+def simulate_game(num_players, initial_hands, max_turns):
+    """ Simulate a single game, returns summary """
+    hands = [deque(h) for h in initial_hands]
+    desk = []
+    turn = 0
+    player = 0
+    active_players = num_players
 
-    # play a card
-    card = hands[player].pop(0)
-    desk.append(card)
+    while turn < max_turns:
+        # skip empty player
+        if num_players >= 3 and not hands[player]:
+            player = (player + 1) % num_players
+            continue
 
-    # check match
-    if len(desk) != len(set(desk)):
-        matching_card = desk[-1]
-        idx = desk.index(matching_card)
-        gain = desk[idx:]
-        del desk[idx:]
-        hands[player].extend(gain)
-    else:
-        player = (player + 1) % NUM_PLAYERS
+        # win?
+        if active_players <= 1:
+            break
 
-    turn += 1
-    return
+        # play a card
+        card = hands[player].popleft()
+        desk.append(card)
+
+        # check match
+        if card in desk[:-1]:
+            matching_card = desk[-1]
+            idx = desk.index(matching_card)
+            gain = desk[idx:]
+            del desk[idx:]
+            hands[player].extend(gain)
+        else:
+            # check for empty hand at end of turn
+            if not hands[player]:
+                active_players -= 1
+            player = (player + 1) % num_players
+
+        turn += 1
+
+    return {
+        "initial_hands": initial_hands,
+        "turns": turn,
+        "winner": player
+    }
 ```
-To manage simulating more games in a given time, I implemented parallel processing. The code saves initial player hands and basic stats into summary csv files per 1 million simulated games. In `end_results.csv` the results and turn count distribution are summarized for each batch. This structure is chosen since csv files often cannot be handled safely when they contain more than about 1 million rows.
+To manage simulating more games in a given time, I implemented parallel processing. The code saves basic resulting stats into histogram files. Histogram data for the turn count and winning rates are saved. The initial hand cards of the players are only saved, if a new shortest/longest games was found (i.e. if the game was "interesting"). 
 
-A batch summary file looks something like this:<br/>
-| id | turns | winner | hand 0 | hand 1 |
-| --- | --- | --- | --- | --- |
-| 0 | 535 | 0 |	K, J, Q, 2, 6, 6, Q, Q, K, 9, Q, 8, 8, J, 2, 7, 2, 2, Joker, 7, 9, 10, 4, 5, 8, A, 4 | A, 5, 10, 3, 4, K, J, 9, 4, 3, 7, 7, 6, 10, 5, 10, A, J, K, 6, 3, Joker, 3, 9, 8, 5, A |
-| 1 | 355 |	0 |	7, 9, 3, 8, 6, 2, 4, 5, J, 9, 7, 6, J, K, Q, 5, 6, Q, A, 9, Q, J, 10, K, 7, A, 2 | Q, 8, 10, 4, 10, J, 4, A, 7, 10, 4, 9, Joker, 2, 8, 3, K, 3, 6, A, 3, 5, 2, Joker, 8, K, 5 |
-|2 | 299 | 1 | A, K, 10, J, K, 4, 4, 5, 7, A, 9, 4, 8, 4, 10, 9, 2, 3, 6, 8, 7, 6, J, J, 2, A, 8 | A, 2, Q, Joker, Q, 9, 6, 3, 5, 9, Joker, Q, 6, 7, 3, K, 8, 10, K, Q, 3, 5, 2, 5, 7, 10, J |
-|3 | 456 | 1 | 4, 7, A, J, 6, 6, A, 9, 6, 6, 5, J, K, 7, 9, 3, 9, 4, 5, 5, 8, 2, 3, 7, 8, 2, J | 2, Joker, 3, A, 10, K, Joker, 5, J, 8, 4, 3, 8, K, 10, 7, Q, 4, Q, Q, 10, 10, 9, K, Q, A, 2 |
-| ... | ... | ... | ... | ... |
-
-
-450 million simulated games produce about **79 GB** of data.
+The initial hands are not saved for each game to save disk space. 450 million simulated games would produce about **79 GB** of data when including the initial hand cards. The reduced data saving leads to about **170 KB** of data for a billion simulations.
 
 ### Logging code:
 The script *game_logger.py* can be used to generate a log file for a game defined by the initial player hands. The log file saves the state (desk cards, hand A, hand B) for each turn.
